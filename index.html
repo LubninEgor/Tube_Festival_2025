@@ -2,7 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Важные мета-теги для iOS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Tube Festival 2025</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -13,6 +16,9 @@
             overflow: hidden;
             font-family: Arial, sans-serif;
             background-color: #000;
+            height: 100vh;
+            width: 100vw;
+            -webkit-tap-highlight-color: transparent;
         }
         .info-panel {
             position: absolute;
@@ -43,14 +49,14 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background-color: #ff3b30; /* Красный по умолчанию */
+            background-color: #ff3b30;
             z-index: 10000;
             box-shadow: 0 0 15px rgba(255, 59, 48, 0.7);
             transition: background-color 0.3s, box-shadow 0.3s;
         }
         
         .marker-indicator.found {
-            background-color: #4cd964; /* Зеленый при обнаружении */
+            background-color: #4cd964;
             box-shadow: 0 0 15px rgba(76, 217, 100, 0.7);
             animation: pulse 1.5s infinite;
         }
@@ -86,10 +92,34 @@
             z-index: 10000;
             box-shadow: 0 0 20px rgba(255,255,255,0.5);
         }
+        
+        /* Кнопка запуска камеры */
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #ff6b6b, #4dabf7);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 10001;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div class="info-panel">
+    <!-- Кнопка для запуска камеры -->
+    <button id="startButton">ЗАПУСТИТЬ КАМЕРУ</button>
+    
+    <div class="info-panel hidden" id="infoPanel">
         <h2>Tube Festival 2025</h2>
         <p>Наведите камеру на маркер Hiro</p>
         <div class="instructions">
@@ -97,20 +127,22 @@
         </div>
     </div>
     
-    <!-- Индикатор обнаружения маркера -->
-    <div class="marker-indicator" id="markerIndicator"></div>
-    <div class="indicator-label" id="indicatorLabel">Поиск маркера</div>
+    <div class="marker-indicator hidden" id="markerIndicator"></div>
+    <div class="indicator-label hidden" id="indicatorLabel">Поиск маркера</div>
     
-    <!-- Изображение маркера для справки -->
-    <div class="marker-image" title="Маркер Hiro"></div>
+    <div class="marker-image hidden" id="markerImage"></div>
 
+    <!-- Добавлен атрибут playsinline для iOS -->
     <a-scene
         vr-mode-ui="enabled: false"
         renderer="logarithmicDepthBuffer: true; precision: medium;"
         embedded
         arjs="sourceType: webcam; debugUIEnabled: false;"
+        id="arScene"
+        style="display: none;"
+        playsinline
+        webxr
     >
-        <!-- Используем стандартный маркер Hiro -->
         <a-marker type="pattern" preset="hiro">
             <a-entity 
                 position="0 0.5 0" 
@@ -124,11 +156,43 @@
     </a-scene>
 
     <script>
+        const startButton = document.getElementById('startButton');
+        const infoPanel = document.getElementById('infoPanel');
         const markerIndicator = document.getElementById('markerIndicator');
         const indicatorLabel = document.getElementById('indicatorLabel');
+        const markerImage = document.getElementById('markerImage');
+        const arScene = document.getElementById('arScene');
         const scene = document.querySelector('a-scene');
         
-        // Начальное состояние
+        // Обработчик запуска камеры
+        startButton.addEventListener('click', function() {
+            // Прячем кнопку
+            startButton.classList.add('hidden');
+            
+            // Показываем AR сцену
+            arScene.style.display = 'block';
+            
+            // Показываем остальные элементы интерфейса
+            infoPanel.classList.remove('hidden');
+            markerIndicator.classList.remove('hidden');
+            indicatorLabel.classList.remove('hidden');
+            markerImage.classList.remove('hidden');
+            
+            // Принудительно запускаем камеру на мобильных устройствах
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        // Камера запущена
+                        console.log("Camera access granted");
+                    })
+                    .catch(function(error) {
+                        console.error("Camera access error:", error);
+                        alert("Не удалось получить доступ к камере. Пожалуйста, проверьте разрешения.");
+                    });
+            }
+        });
+        
+        // Начальное состояние индикатора
         markerIndicator.classList.remove('found');
         indicatorLabel.textContent = "Поиск маркера";
         
