@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tube Festival 2025</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.loaders.min.js"></script>
     <style>
         body {
@@ -72,47 +72,54 @@
             font-size: 12px;
             z-index: 10000;
         }
+        
+        .marker-image {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            border: 2px solid white;
+            border-radius: 10px;
+            background: url('https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png') center/contain no-repeat;
+            z-index: 10000;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
     </style>
 </head>
 <body>
     <div class="info-panel">
         <h2>Tube Festival 2025</h2>
-        <p>Наведите камеру на маркер T-Rex</p>
+        <p>Наведите камеру на маркер Hiro</p>
         <div class="instructions">
-            <p>📸 Скачайте маркер: 
-                <a href="https://raw.githubusercontent.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image.png" 
-                   target="_blank" 
-                   style="color: #4dabf7;">Скачать маркер</a>
-            </p>
+            <p>📸 Распечатайте маркер или откройте его на другом устройстве</p>
         </div>
     </div>
     
     <!-- Индикатор обнаружения маркера -->
     <div class="marker-indicator" id="markerIndicator"></div>
     <div class="indicator-label" id="indicatorLabel">Поиск маркера</div>
+    
+    <!-- Изображение маркера для справки -->
+    <div class="marker-image" title="Маркер Hiro"></div>
 
     <a-scene
         vr-mode-ui="enabled: false"
         renderer="logarithmicDepthBuffer: true; precision: medium;"
         embedded
-        arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;"
+        arjs="sourceType: webcam; debugUIEnabled: false;"
     >
-        <a-nft 
-            type="nft"
-            url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
-            smooth="true"
-            smoothCount="10"
-            smoothTolerance=".01"
-            smoothThreshold="5"
-        >
+        <!-- Используем стандартный маркер Hiro -->
+        <a-marker type="pattern" preset="hiro">
             <a-entity 
-                position="0 0 0" 
+                position="0 0.5 0" 
                 scale="0.05 0.05 0.05" 
                 gltf-model="url(https://cdn.jsdelivr.net/gh/LubninEgor/Tube_Festival_2025@main/models/astronaut.glb)"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"
             >
             </a-entity>
-        </a-nft>
+        </a-marker>
         <a-entity camera></a-entity>
     </a-scene>
 
@@ -137,14 +144,6 @@
             markerIndicator.classList.remove('found');
             indicatorLabel.textContent = "Поиск маркера";
             indicatorLabel.style.color = "white";
-        });
-        
-        // Событие при загрузке маркера
-        scene.addEventListener('arjs-nft-loaded', function() {
-            indicatorLabel.textContent = "Система готова";
-            setTimeout(() => {
-                indicatorLabel.textContent = "Поиск маркера";
-            }, 2000);
         });
     </script>
 </body>
