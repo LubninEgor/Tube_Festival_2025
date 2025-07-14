@@ -5,33 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Tube Festival 2025 - Мобильная версия</title>
-    
-    <script>
-        // Проверка поддержки WebGL
-        function hasWebGL() {
-            try {
-                const canvas = document.createElement('canvas');
-                return !!window.WebGLRenderingContext &&
-                    (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-            } catch (e) {
-                return false;
-            }
-        }
-        
-        // Проверка поддержки getUserMedia
-        function hasGetUserMedia() {
-            return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-        }
-        
-        // Показ системных предупреждений
-        if (!hasWebGL()) {
-            alert("ОШИБКА: Ваш браузер не поддерживает WebGL. Попробуйте Chrome или Firefox.");
-        }
-        if (!hasGetUserMedia()) {
-            alert("ОШИБКА: Ваш браузер не поддерживает доступ к камере. Обновите браузер.");
-        }
-    </script>
+    <title>Tube Festival 2025 - AR Experience</title>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
@@ -84,10 +58,6 @@
             box-shadow: 0 0 30px rgba(76, 201, 240, 0.6);
         }
         
-        .app-logo i {
-            font-size: 60px;
-        }
-        
         .app-title {
             font-size: 28px;
             font-weight: 700;
@@ -126,20 +96,6 @@
             box-shadow: 0 2px 10px rgba(67, 97, 238, 0.4);
         }
         
-        .permission-note {
-            margin-top: 30px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            font-size: 14px;
-            max-width: 90%;
-            color: #b3e5fc;
-        }
-        
-        .permission-note strong {
-            color: #ffeb3b;
-        }
-        
         /* Основной интерфейс AR */
         .ar-interface {
             position: fixed;
@@ -152,7 +108,7 @@
             z-index: 9000;
         }
         
-        /* Видео с камеры - должно заполнять весь экран */
+        /* Видео с камеры */
         #ar-video {
             position: absolute;
             top: 0;
@@ -284,41 +240,22 @@
             border: 1px solid #ff6b6b;
         }
         
-        .hidden {
-            display: none;
+        .debug-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #b3e5fc;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+            max-width: 80%;
         }
         
-        /* Для мобильных устройств с маленькими экранами */
-        @media (max-height: 600px) {
-            .app-logo {
-                width: 80px;
-                height: 80px;
-                margin-bottom: 15px;
-            }
-            
-            .app-logo i {
-                font-size: 40px;
-            }
-            
-            .app-title {
-                font-size: 22px;
-            }
-            
-            .app-subtitle {
-                font-size: 16px;
-                margin-bottom: 20px;
-            }
-            
-            .start-button {
-                padding: 14px 40px;
-                font-size: 16px;
-            }
-            
-            .marker-preview {
-                width: 120px;
-                height: 120px;
-                bottom: 100px;
-            }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -326,16 +263,14 @@
     <!-- Стартовый экран -->
     <div class="start-container" id="startScreen">
         <div class="app-logo">
-            <i>🚀</i>
+            🚀
         </div>
         <h1 class="app-title">Tube Festival 2025</h1>
-        <p class="app-subtitle">Наведите камеру на специальный маркер, чтобы увидеть AR-астронавта</p>
+        <p class="app-subtitle">Наведите камеру на маркер Hiro, чтобы увидеть AR-астронавта</p>
         
         <button class="start-button" id="startButton">ЗАПУСТИТЬ AR</button>
         
-        <div class="permission-note">
-            <strong>Важно:</strong> При первом запуске разрешите доступ к камере. Используйте хорошо освещённое помещение и распечатанный маркер.
-        </div>
+        <div class="debug-info" id="debugInfo"></div>
     </div>
     
     <!-- Интерфейс AR -->
@@ -364,8 +299,6 @@
         <div class="error-message" id="errorMessage"></div>
     </div>
 
-    <!-- Сцена A-Frame будет создана динамически -->
-    
     <script>
         // Элементы интерфейса
         const startScreen = document.getElementById('startScreen');
@@ -379,25 +312,20 @@
         const restartButton = document.getElementById('restartButton');
         const torchButton = document.getElementById('torchButton');
         const errorMessage = document.getElementById('errorMessage');
+        const debugInfo = document.getElementById('debugInfo');
         
         // Переменные состояния
         let currentCamera = 'environment'; // 'environment' или 'user'
         let torchActive = false;
         let mediaStream = null;
         let arScene = null;
+        let markerFound = false;
+        let detectionTimer = null;
         
         // Инициализация при загрузке
         window.addEventListener('DOMContentLoaded', () => {
-            // Проверяем поддержку
-            if (!hasWebGL()) {
-                showError("Ваше устройство не поддерживает WebGL. Попробуйте другой браузер.");
-                return;
-            }
-            
-            if (!hasGetUserMedia()) {
-                showError("Ваш браузер не поддерживает доступ к камере.");
-                return;
-            }
+            // Обновляем информацию о системе
+            updateDebugInfo(`Система: ${navigator.userAgent.split(') ')[0]})`);
         });
         
         // Запуск AR по кнопке
@@ -417,13 +345,8 @@
         
         // Основная функция запуска AR
         function startAR() {
-            // Скрываем стартовый экран
             startScreen.classList.add('hidden');
-            
-            // Показываем интерфейс AR
             arInterface.style.display = 'flex';
-            
-            // Инициализируем камеру
             initCamera();
         }
         
@@ -438,38 +361,26 @@
                 }
             };
             
-            // Остановить предыдущий поток, если есть
+            // Остановить предыдущий поток
             if (mediaStream) {
                 mediaStream.getTracks().forEach(track => track.stop());
             }
             
-            // Запросить доступ к камере
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(stream => {
                     mediaStream = stream;
-                    
-                    // Назначить поток для видео элемента
                     arVideo.srcObject = stream;
                     
-                    // Для iOS: специальные атрибуты
+                    // Для iOS
                     arVideo.setAttribute('playsinline', true);
                     arVideo.setAttribute('webkit-playsinline', true);
                     
-                    // Обработка метаданных видео
                     arVideo.onloadedmetadata = () => {
-                        // Создаем AR сцену после загрузки видео
                         initARScene();
+                        arVideo.play().catch(err => {
+                            showError("Ошибка воспроизведения видео: " + err.message);
+                        });
                     };
-                    
-                    // Обработка ошибок видео
-                    arVideo.onerror = () => {
-                        showError("Ошибка при воспроизведении видео с камеры");
-                    };
-                    
-                    // Запустить воспроизведение
-                    arVideo.play().catch(err => {
-                        showError("Ошибка воспроизведения видео: " + err.message);
-                    });
                 })
                 .catch(err => {
                     handleCameraError(err);
@@ -478,16 +389,27 @@
         
         // Инициализация AR сцены
         function initARScene() {
-            // Создаем сцену A-Frame динамически
+            // Создаем сцену с улучшенными параметрами для детекции
             const sceneHTML = `
                 <a-scene 
                     vr-mode-ui="enabled: false"
                     embedded
-                    arjs="sourceType: video; debugUIEnabled: false;"
-                    renderer="logarithmicDepthBuffer: true; precision: medium;"
+                    arjs="sourceType: video; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+                    renderer="logarithmicDepthBuffer: true; precision: medium; antialias: true; alpha: true;"
                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
                 >
-                    <a-marker type="pattern" preset="hiro">
+                    <!-- Маркер Hiro с улучшенными параметрами -->
+                    <a-marker 
+                        type="pattern" 
+                        preset="hiro"
+                        emitevents="true" 
+                        cursor="rayOrigin: mouse"
+                        smooth="true"
+                        smoothCount="10"
+                        smoothTolerance="0.01"
+                        smoothThreshold="5"
+                    >
+                        <!-- Простой куб для тестирования -->
                         <a-box 
                             position="0 0.5 0" 
                             scale="0.5 0.5 0.5" 
@@ -499,29 +421,44 @@
                 </a-scene>
             `;
             
-            // Вставляем сцену в контейнер
             arSceneContainer.innerHTML = sceneHTML;
-            arScene = document.querySelector('a-scene');
+            arScene = arSceneContainer.querySelector('a-scene');
             
             // Назначаем видео элемент как источник для AR.js
-            const arSystem = arScene.systems['arjs'];
-            if (arSystem) {
-                arSystem._arSource.domElement = arVideo;
-            }
+            setTimeout(() => {
+                const arSystem = arScene.systems['arjs'];
+                if (arSystem && arSystem._arSource) {
+                    arSystem._arSource.domElement = arVideo;
+                    arSystem._arSource.init();
+                    arSystem._arSource.onResize();
+                    arSystem._arSource.copyElementSizeTo(arScene);
+                    
+                    // Принудительный ресайз
+                    window.dispatchEvent(new Event('resize'));
+                }
+            }, 500);
             
-            // Обработчики событий AR
-            arScene.addEventListener('markerFound', () => {
+            // Обработчики событий маркера
+            arScene.addEventListener('markerFound', (e) => {
+                markerFound = true;
                 detectionIndicator.classList.add('found');
                 detectionIndicator.textContent = "✓";
                 indicatorLabel.textContent = "Маркер обнаружен!";
                 indicatorLabel.style.color = "#4cd964";
+                
+                // Обновляем отладочную информацию
+                updateDebugInfo(`Маркер найден! ID: ${e.target.id}`);
             });
             
-            arScene.addEventListener('markerLost', () => {
+            arScene.addEventListener('markerLost', (e) => {
+                markerFound = false;
                 detectionIndicator.classList.remove('found');
                 detectionIndicator.textContent = "🔍";
                 indicatorLabel.textContent = "Наведите на маркер";
                 indicatorLabel.style.color = "#ffffff";
+                
+                // Обновляем отладочную информацию
+                updateDebugInfo("Маркер потерян");
             });
             
             // Обработчик ошибок сцены
@@ -530,13 +467,23 @@
                 showError("Ошибка AR сцены: " + e.detail);
             });
             
-            // Принудительный ресайз для AR.js
-            setTimeout(() => {
-                if (arSystem && arSystem._arSource) {
-                    arSystem._arSource.onResize();
-                    arSystem._arSource.copyElementSizeTo(arScene);
+            // Проверка состояния маркера каждую секунду
+            detectionTimer = setInterval(() => {
+                if (!markerFound) {
+                    updateDebugInfo("Поиск маркера...");
                 }
             }, 1000);
+            
+            // Обработчик ресайза
+            window.addEventListener('resize', () => {
+                if (arScene && arScene.isPlaying) {
+                    const arSystem = arScene.systems['arjs'];
+                    if (arSystem && arSystem._arSource) {
+                        arSystem._arSource.onResize();
+                        arSystem._arSource.copyElementSizeTo(arScene);
+                    }
+                }
+            });
         }
         
         // Переключение фонарика
@@ -578,6 +525,8 @@
                 case 'SecurityError':
                     errorMsg = "Ошибка безопасности. Убедитесь, что вы используете HTTPS.";
                     break;
+                default:
+                    errorMsg = `Ошибка камеры: ${error.message || error.name}`;
             }
             
             showError(errorMsg);
@@ -588,7 +537,6 @@
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
             
-            // Автоскрытие через 5 секунд
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 5000);
@@ -599,14 +547,24 @@
             // Очищаем контейнер сцены
             arSceneContainer.innerHTML = '';
             
+            if (detectionTimer) {
+                clearInterval(detectionTimer);
+            }
+            
             // Перезапускаем камеру
             initCamera();
             
-            // Сбрасываем сообщения
+            // Сбрасываем UI
             errorMessage.style.display = 'none';
             detectionIndicator.classList.remove('found');
+            detectionIndicator.textContent = "🔍";
             indicatorLabel.textContent = "Наведите на маркер";
             indicatorLabel.style.color = "#ffffff";
+        }
+        
+        // Обновление отладочной информации
+        function updateDebugInfo(message) {
+            debugInfo.textContent = message;
         }
     </script>
 </body>
