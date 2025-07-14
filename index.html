@@ -12,6 +12,7 @@
             margin: 0;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            background-color: #000;
         }
         .info-panel {
             position: absolute;
@@ -33,12 +34,43 @@
             margin-top: 10px;
             font-size: 14px;
         }
-        .status {
-            margin-top: 10px;
-            padding: 5px;
-            border-radius: 3px;
-            background-color: #333;
-            display: none;
+        
+        /* Индикатор обнаружения маркера */
+        .marker-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ff3b30; /* Красный по умолчанию */
+            z-index: 10000;
+            box-shadow: 0 0 15px rgba(255, 59, 48, 0.7);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .marker-indicator.found {
+            background-color: #4cd964; /* Зеленый при обнаружении */
+            box-shadow: 0 0 15px rgba(76, 217, 100, 0.7);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .indicator-label {
+            position: absolute;
+            top: 65px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 10000;
         }
     </style>
 </head>
@@ -47,15 +79,17 @@
         <h2>Tube Festival 2025</h2>
         <p>Наведите камеру на маркер T-Rex</p>
         <div class="instructions">
-            <p>📸 Скачайте и распечатайте маркер: 
+            <p>📸 Скачайте маркер: 
                 <a href="https://raw.githubusercontent.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image.png" 
                    target="_blank" 
                    style="color: #4dabf7;">Скачать маркер</a>
             </p>
-            <p>🔍 Убедитесь в хорошем освещении</p>
         </div>
-        <div class="status" id="status">Поиск маркера...</div>
     </div>
+    
+    <!-- Индикатор обнаружения маркера -->
+    <div class="marker-indicator" id="markerIndicator"></div>
+    <div class="indicator-label" id="indicatorLabel">Поиск маркера</div>
 
     <a-scene
         vr-mode-ui="enabled: false"
@@ -83,23 +117,34 @@
     </a-scene>
 
     <script>
-        // Обновление статуса в реальном времени
-        const statusEl = document.getElementById('status');
+        const markerIndicator = document.getElementById('markerIndicator');
+        const indicatorLabel = document.getElementById('indicatorLabel');
+        const scene = document.querySelector('a-scene');
         
-        document.querySelector('a-scene').addEventListener('arjs-nft-loaded', function() {
-            statusEl.textContent = "Маркер готов к использованию";
-            statusEl.style.display = 'block';
-            statusEl.style.backgroundColor = '#2ecc71';
+        // Начальное состояние
+        markerIndicator.classList.remove('found');
+        indicatorLabel.textContent = "Поиск маркера";
+        
+        // Событие при обнаружении маркера
+        scene.addEventListener('markerFound', function() {
+            markerIndicator.classList.add('found');
+            indicatorLabel.textContent = "Маркер найден!";
+            indicatorLabel.style.color = "#4cd964";
         });
         
-        document.querySelector('a-scene').addEventListener('markerFound', function() {
-            statusEl.textContent = "Маркер найден!";
-            statusEl.style.backgroundColor = '#2ecc71';
+        // Событие при потере маркера
+        scene.addEventListener('markerLost', function() {
+            markerIndicator.classList.remove('found');
+            indicatorLabel.textContent = "Поиск маркера";
+            indicatorLabel.style.color = "white";
         });
         
-        document.querySelector('a-scene').addEventListener('markerLost', function() {
-            statusEl.textContent = "Поиск маркера...";
-            statusEl.style.backgroundColor = '#e74c3c';
+        // Событие при загрузке маркера
+        scene.addEventListener('arjs-nft-loaded', function() {
+            indicatorLabel.textContent = "Система готова";
+            setTimeout(() => {
+                indicatorLabel.textContent = "Поиск маркера";
+            }, 2000);
         });
     </script>
 </body>
