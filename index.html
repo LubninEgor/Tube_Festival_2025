@@ -3,9 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tube Festival 2025 - Тест маркера</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tube Festival 2025 - Фикс камеры</title>
     
-    <!-- Минимальные зависимости -->
+    <script>
+        // Проверяем поддержку WebGL
+        function checkWebGLSupport() {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(
+                    window.WebGLRenderingContext &&
+                    (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+                );
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        // Показываем предупреждение, если WebGL не поддерживается
+        if (!checkWebGLSupport()) {
+            alert("Ваш браузер не поддерживает WebGL. Попробуйте обновить браузер или использовать Chrome/Firefox.");
+        }
+    </script>
+    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     
@@ -14,19 +35,21 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background: #000;
             color: white;
             overflow: hidden;
             height: 100vh;
             width: 100vw;
+            touch-action: none;
         }
         
-        /* Экран статуса */
-        .status-screen {
+        /* Стартовый экран */
+        .start-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -36,150 +59,214 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.9);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             z-index: 10000;
             text-align: center;
             padding: 20px;
         }
         
-        .status-icon {
-            font-size: 64px;
+        .logo {
+            width: 150px;
+            height: 150px;
             margin-bottom: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #4cc9f0 0%, #4361ee 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            color: white;
+            box-shadow: 0 0 30px rgba(76, 201, 240, 0.7);
         }
         
-        .status-title {
+        .title {
             font-size: 28px;
-            margin-bottom: 10px;
-            color: #4dabf7;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #4cc9f0, #f72585);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
         }
         
-        .status-text {
+        .instructions {
             font-size: 18px;
             margin-bottom: 30px;
-            max-width: 600px;
-            line-height: 1.5;
-        }
-        
-        .status-note {
-            font-size: 14px;
-            color: #aaa;
-            margin-top: 20px;
             max-width: 500px;
+            line-height: 1.6;
+            color: #e0e0e0;
         }
         
         .btn {
-            padding: 15px 40px;
-            font-size: 18px;
-            background: linear-gradient(45deg, #ff6b6b, #4dabf7);
+            padding: 16px 50px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #4361ee, #4cc9f0);
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             margin-top: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 25px rgba(67, 97, 238, 0.5);
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover, .btn:active {
+            transform: scale(1.05);
+            box-shadow: 0 7px 30px rgba(67, 97, 238, 0.7);
+        }
+        
+        .warning {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.15);
+            border-radius: 10px;
+            max-width: 500px;
+            font-size: 14px;
         }
         
         .hidden {
             display: none;
         }
         
+        /* Экран камеры */
+        .camera-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9000;
+        }
+        
         /* Маркер для тестирования */
         .test-marker {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            width: 150px;
-            height: 150px;
-            border: 2px solid white;
-            border-radius: 10px;
+            width: 180px;
+            height: 180px;
+            border: 3px solid white;
+            border-radius: 15px;
             background: url('https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png') center/contain no-repeat;
             z-index: 10000;
-            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
         }
         
         /* Индикатор обнаружения */
         .detection-indicator {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
+            top: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background-color: #ff3b30;
             z-index: 10000;
-            box-shadow: 0 0 15px rgba(255, 59, 48, 0.7);
+            box-shadow: 0 0 20px rgba(255, 59, 48, 0.7);
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
         }
         
         .detection-indicator.found {
             background-color: #4cd964;
-            box-shadow: 0 0 20px rgba(76, 217, 100, 0.7);
+            box-shadow: 0 0 30px rgba(76, 217, 100, 0.7);
             animation: pulse 1s infinite;
         }
         
         @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
         
         .indicator-label {
             position: absolute;
-            top: 65px;
-            right: 10px;
+            top: 85px;
+            right: 15px;
             color: white;
-            background: rgba(0,0,0,0.5);
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-size: 14px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 16px;
             z-index: 10000;
+            min-width: 180px;
+            text-align: center;
+        }
+        
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: space-between;
+            z-index: 10000;
+            font-size: 16px;
         }
         
         .debug-info {
             position: absolute;
             bottom: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
             z-index: 10000;
+            max-width: 90%;
+        }
+        
+        /* Для устройств iOS */
+        @supports (-webkit-touch-callout: none) {
+            .btn {
+                padding: 20px 55px;
+            }
         }
     </style>
 </head>
 <body>
     <!-- Стартовый экран -->
-    <div class="status-screen" id="startScreen">
-        <div class="status-icon">🎯</div>
-        <h1 class="status-title">Тест обнаружения маркера</h1>
-        <p class="status-text">
-            Это тестовая версия для проверки работы AR-маркера. Приложение покажет зелёный индикатор, 
-            когда обнаружит маркер Hiro.
+    <div class="start-screen" id="startScreen">
+        <div class="logo">🚀</div>
+        <h1 class="title">Tube Festival 2025</h1>
+        <p class="instructions">
+            Наведите камеру на маркер Hiro, чтобы активировать AR-опыт. Для работы приложения необходим доступ к камере.
         </p>
-        <p class="status-note">
-            Для работы приложения необходим доступ к камере. Убедитесь, что маркер хорошо освещён и полностью виден в кадре.
-        </p>
-        <button class="btn" id="startBtn">НАЧАТЬ ТЕСТ</button>
+        
+        <button class="btn" id="startBtn">АКТИВИРОВАТЬ КАМЕРУ</button>
+        
+        <div class="warning">
+            ⚠️ Если камера не активируется, убедитесь что вы разрешили доступ к камере в настройках браузера.
+            Попробуйте использовать последние версии Chrome или Firefox.
+        </div>
     </div>
     
-    <!-- Экран обнаружения -->
-    <div class="status-screen hidden" id="detectionScreen">
-        <div class="status-icon">🔍</div>
-        <h1 class="status-title">Поиск маркера</h1>
-        <p class="status-text">
-            Наведите камеру на маркер Hiro. Когда приложение обнаружит маркер, индикатор в правом верхнем углу станет зелёным.
-        </p>
+    <!-- Экран камеры -->
+    <div class="camera-screen hidden" id="cameraScreen">
+        <div class="status-bar">
+            <div>Tube Festival 2025</div>
+            <div id="cameraStatus">Ожидание камеры...</div>
+        </div>
+        
+        <div class="detection-indicator" id="detectionIndicator">🔍</div>
+        <div class="indicator-label" id="indicatorLabel">Поиск маркера</div>
+        
         <div class="test-marker"></div>
-        <button class="btn" id="restartBtn">ПЕРЕЗАПУСТИТЬ</button>
+        
+        <div class="debug-info" id="debugInfo"></div>
+        
+        <button class="btn" id="restartBtn" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);">
+            ПЕРЕЗАПУСТИТЬ
+        </button>
     </div>
-    
-    <!-- Индикатор обнаружения -->
-    <div class="detection-indicator" id="detectionIndicator"></div>
-    <div class="indicator-label" id="indicatorLabel">Поиск маркера</div>
-    
-    <!-- Отладочная информация -->
-    <div class="debug-info" id="debugInfo"></div>
 
     <!-- AR сцена -->
     <a-scene
@@ -187,15 +274,16 @@
         embedded
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         id="arScene"
-        style="display: none;"
-        playsinline
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none;"
+        renderer="logarithmicDepthBuffer: true; precision: medium; alpha: true; antialias: true;"
+        webxr
     >
-        <!-- Простой куб вместо модели для тестирования -->
+        <!-- Простой куб для тестирования -->
         <a-marker type="pattern" preset="hiro">
             <a-box 
                 position="0 0.5 0" 
                 scale="0.5 0.5 0.5" 
-                color="#4CC3D9"
+                color="#4361ee"
                 animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"
             ></a-box>
         </a-marker>
@@ -205,111 +293,149 @@
     <script>
         // Элементы интерфейса
         const startScreen = document.getElementById('startScreen');
-        const detectionScreen = document.getElementById('detectionScreen');
+        const cameraScreen = document.getElementById('cameraScreen');
         const startBtn = document.getElementById('startBtn');
         const restartBtn = document.getElementById('restartBtn');
         const detectionIndicator = document.getElementById('detectionIndicator');
         const indicatorLabel = document.getElementById('indicatorLabel');
+        const cameraStatus = document.getElementById('cameraStatus');
         const debugInfo = document.getElementById('debugInfo');
         const arScene = document.getElementById('arScene');
-        const scene = document.querySelector('a-scene');
         
         // Переменные состояния
+        let cameraStarted = false;
+        let stream = null;
         let detectionCount = 0;
-        let lastDetectionTime = 0;
         
-        // Начать тест
-        startBtn.addEventListener('click', startTest);
-        restartBtn.addEventListener('click', restartTest);
+        // Начать работу с камерой
+        startBtn.addEventListener('click', startCamera);
+        restartBtn.addEventListener('click', restartApp);
         
-        function startTest() {
+        function startCamera() {
+            // Показать экран камеры
             startScreen.classList.add('hidden');
-            detectionScreen.classList.remove('hidden');
+            cameraScreen.classList.remove('hidden');
+            arScene.style.display = 'block';
             
-            // Запросить доступ к камере
-            navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: 'environment', // Используем заднюю камеру
+            // Проверяем, поддерживается ли getUserMedia
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showError("Ваш браузер не поддерживает доступ к камере");
+                return;
+            }
+            
+            // Параметры камеры
+            const constraints = {
+                video: {
+                    facingMode: 'environment',
                     width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                } 
-            }).then(function(stream) {
-                // Показать AR сцену
-                arScene.style.display = 'block';
-                
-                // Обновить отладочную информацию
-                updateDebugInfo('Камера запущена. Ищем маркер...');
-                
-            }).catch(function(error) {
-                console.error("Ошибка доступа к камере:", error);
-                
-                // Показать сообщение об ошибке
-                updateDebugInfo(`Ошибка: ${getErrorMessage(error)}`);
-                indicatorLabel.textContent = "Ошибка камеры";
-                detectionIndicator.style.backgroundColor = "#ff9800";
-            });
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 30 }
+                }
+            };
+            
+            // Пытаемся получить доступ к камере
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(handleCameraSuccess)
+                .catch(handleCameraError);
         }
         
-        function restartTest() {
-            // Перезагружаем страницу для чистого теста
+        function handleCameraSuccess(mediaStream) {
+            cameraStarted = true;
+            stream = mediaStream;
+            cameraStatus.textContent = "Камера активна";
+            debugInfo.textContent = "Камера успешно активирована";
+            
+            // Для Safari: добавляем необходимые атрибуты
+            if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                const videoElement = document.querySelector('video');
+                if (videoElement) {
+                    videoElement.setAttribute('playsinline', 'true');
+                    videoElement.setAttribute('webkit-playsinline', 'true');
+                }
+            }
+        }
+        
+        function handleCameraError(error) {
+            let errorMessage = "Неизвестная ошибка камеры";
+            
+            if (error.name === 'NotAllowedError') {
+                errorMessage = "Доступ к камере запрещён. Пожалуйста, разрешите доступ в настройках браузера.";
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = "Камера не найдена. Убедитесь, что устройство имеет камеру.";
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = "Камера недоступна. Возможно, она уже используется другим приложением.";
+            } else if (error.name === 'OverconstrainedError') {
+                errorMessage = "Не удалось настроить камеру. Попробуйте перезапустить приложение.";
+            } else if (error.name === 'SecurityError') {
+                errorMessage = "Ошибка безопасности. Убедитесь, что страница загружена по HTTPS.";
+            }
+            
+            showError(errorMessage);
+        }
+        
+        function showError(message) {
+            cameraStatus.textContent = "Ошибка";
+            cameraStatus.style.color = "#ff6b6b";
+            indicatorLabel.textContent = message;
+            indicatorLabel.style.color = "#ff6b6b";
+            detectionIndicator.style.backgroundColor = "#ff6b6b";
+            debugInfo.textContent = message;
+        }
+        
+        function restartApp() {
+            // Останавливаем все треки камеры
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Перезагружаем страницу
             location.reload();
         }
         
-        // Обработчики событий AR.js
-        scene.addEventListener('markerFound', function() {
-            detectionCount++;
-            lastDetectionTime = Date.now();
+        // Обновление отладочной информации
+        function updateDebugInfo() {
+            const info = [
+                `Платформа: ${navigator.platform}`,
+                `Браузер: ${navigator.userAgent}`,
+                `Онлайн: ${navigator.onLine ? 'Да' : 'Нет'}`,
+                `Камера: ${cameraStarted ? 'Активна' : 'Неактивна'}`,
+                `Обнаружений: ${detectionCount}`
+            ];
             
-            // Визуальная индикация
-            detectionIndicator.classList.add('found');
-            indicatorLabel.textContent = `Маркер найден! (${detectionCount})`;
-            indicatorLabel.style.color = "#4cd964";
-            
-            // Отладочная информация
-            updateDebugInfo(`Маркер обнаружен! Позиция: ${getMarkerPosition()}`);
-        });
+            debugInfo.innerHTML = info.join('<br>');
+        }
         
-        scene.addEventListener('markerLost', function() {
-            // Визуальная индикация
-            detectionIndicator.classList.remove('found');
-            indicatorLabel.textContent = "Поиск маркера";
-            indicatorLabel.style.color = "white";
-            
-            // Отладочная информация
-            updateDebugInfo("Маркер потерян. Ожидание...");
-        });
-        
-        // Вспомогательные функции
-        function getErrorMessage(error) {
-            if (error.name === 'NotAllowedError') {
-                return "Доступ к камере запрещён. Разрешите доступ в настройках браузера.";
-            } else if (error.name === 'NotFoundError') {
-                return "Камера не найдена. Убедитесь, что устройство имеет камеру.";
-            } else if (error.name === 'NotReadableError') {
-                return "Камера уже используется другим приложением.";
+        // Проверка поддержки AR
+        function checkARSupport() {
+            // Проверяем базовую поддержку
+            if (!checkWebGLSupport()) {
+                showError("WebGL не поддерживается. Обновите браузер.");
+                return false;
             }
-            return "Неизвестная ошибка. Попробуйте другой браузер.";
-        }
-        
-        function updateDebugInfo(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            debugInfo.innerHTML = `[${timestamp}] ${message}`;
-        }
-        
-        function getMarkerPosition() {
-            // В реальном приложении здесь можно получить позицию маркера
-            return "x: 0, y: 0, z: 0";
-        }
-        
-        // Автоматическое обновление информации
-        setInterval(() => {
-            if (lastDetectionTime > 0 && (Date.now() - lastDetectionTime) > 3000) {
-                updateDebugInfo("Маркер не обнаружен более 3 секунд");
+            
+            // Проверяем наличие getUserMedia
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showError("Ваш браузер не поддерживает доступ к камере");
+                return false;
             }
-        }, 1000);
+            
+            return true;
+        }
         
-        // Информация о системе
-        updateDebugInfo(`Система: ${navigator.userAgent}`);
+        // Инициализация при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            // Проверяем поддержку AR
+            checkARSupport();
+            
+            // Обновляем отладочную информацию каждые 2 секунды
+            setInterval(updateDebugInfo, 2000);
+            
+            // Для iOS: добавляем специальные атрибуты
+            if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                document.body.classList.add('ios-device');
+                debugInfo.textContent = "iOS устройство: используем специальные настройки";
+            }
+        });
     </script>
 </body>
 </html>
