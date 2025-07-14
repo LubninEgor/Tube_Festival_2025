@@ -5,39 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tube Festival 2025</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <!-- Обновленная версия AR.js с CDN -->
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.loaders.min.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
+            font-family: Arial, sans-serif;
         }
         .info-panel {
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0,0,0,0.7);
             color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: Arial, sans-serif;
-            z-index: 1000;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 10000;
+            max-width: 300px;
+            backdrop-filter: blur(5px);
+        }
+        h2 {
+            margin-top: 0;
+            color: #ff6b6b;
+        }
+        .instructions {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 5px;
+            border-radius: 3px;
+            background-color: #333;
+            display: none;
         }
     </style>
 </head>
-<body style='margin : 0px; overflow: hidden;'>
+<body>
     <div class="info-panel">
         <h2>Tube Festival 2025</h2>
-        <p>Наведите камеру на маркер</p>
+        <p>Наведите камеру на маркер T-Rex</p>
+        <div class="instructions">
+            <p>📸 Скачайте и распечатайте маркер: 
+                <a href="https://raw.githubusercontent.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image.png" 
+                   target="_blank" 
+                   style="color: #4dabf7;">Скачать маркер</a>
+            </p>
+            <p>🔍 Убедитесь в хорошем освещении</p>
+        </div>
+        <div class="status" id="status">Поиск маркера...</div>
     </div>
+
     <a-scene
         vr-mode-ui="enabled: false"
         renderer="logarithmicDepthBuffer: true; precision: medium;"
         embedded
         arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;"
     >
-        <!-- Исправленный маркер -->
         <a-nft 
             type="nft"
             url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
@@ -46,15 +71,36 @@
             smoothTolerance=".01"
             smoothThreshold="5"
         >
-            <!-- Исправленная модель с работающим URL -->
             <a-entity 
                 position="0 0 0" 
                 scale="0.05 0.05 0.05" 
-                gltf-model="url(https://cdn.glitch.global/7e6c1e90-6f0d-4a42-9e5c-0f3a9d8a3b4e/astronaut.glb?v=1647351234567)"
+                gltf-model="url(https://cdn.jsdelivr.net/gh/LubninEgor/Tube_Festival_2025@main/models/astronaut.glb)"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"
             >
             </a-entity>
         </a-nft>
         <a-entity camera></a-entity>
     </a-scene>
+
+    <script>
+        // Обновление статуса в реальном времени
+        const statusEl = document.getElementById('status');
+        
+        document.querySelector('a-scene').addEventListener('arjs-nft-loaded', function() {
+            statusEl.textContent = "Маркер готов к использованию";
+            statusEl.style.display = 'block';
+            statusEl.style.backgroundColor = '#2ecc71';
+        });
+        
+        document.querySelector('a-scene').addEventListener('markerFound', function() {
+            statusEl.textContent = "Маркер найден!";
+            statusEl.style.backgroundColor = '#2ecc71';
+        });
+        
+        document.querySelector('a-scene').addEventListener('markerLost', function() {
+            statusEl.textContent = "Поиск маркера...";
+            statusEl.style.backgroundColor = '#e74c3c';
+        });
+    </script>
 </body>
 </html>
