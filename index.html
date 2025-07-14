@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Advanced AR.js Demo</title>
+    <!-- Поддержка iOS -->
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Основные библиотеки -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.0/aframe/build/aframe-ar-nft.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        .debug-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        .arjs-loader {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Оверлей загрузки -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="arjs-loader">Загрузка AR...</div>
+        <div id="progressText">0%</div>
+    </div>
+
+    <!-- Панель отладки -->
+    <div class="debug-panel" id="debugPanel" style="display:none;">
+        Статус: <span id="statusText">Инициализация</span><br>
+        FPS: <span id="fpsCounter">0</span><br>
+        <button id="toggleStats">Вкл/Выкл статистику</button>
+    </div>
+
+    <!-- AR-сцена -->
+    <a-scene 
+        vr-mode-ui="enabled: false"
+        embedded 
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        renderer="logarithmicDepthBuffer: true; antialias: true; precision: high;"
+        stats
+    >
+        <!-- NFT маркер (замените url на свой) -->
+        <a-nft
+            type="nft"
+            url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/card"
+            smooth="true"
+            smoothCount="10"
+            smoothTolerance="0.01"
+            smoothThreshold="5"
+        >
+            <!-- 3D-модель с PBR материалами -->
+            <a-entity 
+                id="mainModel"
+                gltf-model="https://cdn.glitch.global/5e8c1cb4-0e5c-4e2e-ba5f-4b5a0b7f0c8e/shiba.glb?v=1671027270579"
+                scale="0.05 0.05 0.05"
+                position="0 0.5 0"
+                animation-mixer="clip: *; loop: repeat;"
+                cursor-listener
+                shadow="type: basic"
+            >
+                <!-- Кастомные материалы -->
+                <a-entity 
+                    material="shader: standard;
+                             metalness: 0.8;
+                             roughness: 0.2;
+                             envMapIntensity: 1.0;
+                             normalScale: 1 1"
+                ></a-entity>
+            </a-entity>
+            
+            <!-- Интерактивные элементы -->
+            <a-entity 
+                geometry="primitive: sphere; radius: 0.2" 
+                material="color: #FF0000; shader: flat"
+                position="0 1.5 0"
+                animation="property: scale; dir: alternate; dur: 2000; loop: true; to: 1.2 1.2 1.2"
+                onclick="toggleAnimation()"
+                cursor-listener
+            ></a-entity>
+        </a-nft>
+        
+        <!-- Статическое окружение -->
+        <a-entity environment="preset: forest; dressingAmount: 50; groundColor: #445; grid: cross"></a-entity>
+        
+        <!-- Источник света -->
+        <a-entity light="type: directional; color: #FFF; intensity: 0.8" position="-1 2 1"></a-entity>
+        <a-entity light="type: ambient; color: #888; intensity: 0.5"></a-entity>
+        
+        <!-- Камера -->
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        // Конфигурация
+        const CONFIG = {
+            useCustomLoader: true,
+            enableDebug: true,
+            enableStats: true,
+            modelScale: 0.05,
+            modelUrl: "https://cdn.glitch.global/5e8c1cb4-0e5c-4e2e-ba5f-4b5a0b7f0c8e/shiba.glb?v=1671027270579",
+            markerUrl: "https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/card"
+        };
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            // Настройка сцены
+            const scene = document.querySelector('a-scene');
+            
+            // Управление оверлеем загрузки
+            if (CONFIG.useCustomLoader) {
+                scene.addEventListener('loaded', () => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                });
+                
+                // Имитация прогресса
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress >= 100) {
+                        clearInterval(progressInterval);
+                        document.getElementById('progressText').textContent = "100%";
+                    } else {
+                        document.getElementById('progressText').textContent = `${Math.round(progress)}%`;
+                    }
+                }, 300);
+            }
+            
+            // Настройка отладки
+            if (CONFIG.enableDebug) {
+                document.getElementById('debugPanel').style.display = 'block';
+                
+                // Показ FPS
+                let lastCalledTime;
+                let fps = 0;
+                
+                function updateFPS() {
+                    if (!lastCalledTime) {
+                        lastCalledTime = Date.now();
+                        fps = 0;
+                    } else {
+                        const delta = (Date.now() - lastCalledTime) / 1000;
+                        lastCalledTime = Date.now();
+                        fps = Math.floor(1 / delta);
+                    }
+                    document.getElementById('fpsCounter').textContent = fps;
+                    requestAnimationFrame(updateFPS);
+                }
+                updateFPS();
+                
+                // Переключение статистики
+                document.getElementById('toggleStats').addEventListener('click', () => {
+                    const stats = document.querySelector('a-scene').components.stats;
+                    stats.data.visible = !stats.data.visible;
+                });
+            }
+            
+            // Обработка ошибок
+            scene.addEventListener('arjs-nft-loaded', (e) => {
+                document.getElementById('statusText').textContent = "Маркер загружен";
+            });
+            
+            scene.addEventListener('arjs-video-loaded', (e) => {
+                document.getElementById('statusText').textContent = "Камера активирована";
+            });
+            
+            // Адаптивная настройка для мобильных
+            if (/Mobi|Android/i.test(navigator.userAgent)) {
+                scene.setAttribute('arjs', 'sourceWidth: 1280; sourceHeight: 720; displayWidth: 800; displayHeight: 450;');
+            }
+        });
+        
+        // Интерактивные функции
+        function toggleAnimation() {
+            const model = document.getElementById('mainModel');
+            const animComponent = model.components['animation-mixer'];
+            
+            if (animComponent) {
+                if (animComponent.data.timeScale === 0) {
+                    animComponent.data.timeScale = 1;
+                    model.setAttribute('material', 'color', '#FFFFFF');
+                } else {
+                    animComponent.data.timeScale = 0;
+                    model.setAttribute('material', 'color', '#FF5555');
+                }
+            }
+        }
+        
+        // Кастомные компоненты
+        AFRAME.registerComponent('cursor-listener', {
+            init: function() {
+                this.el.addEventListener('click', (evt) => {
+                    this.el.setAttribute('scale', {
+                        x: this.el.object3D.scale.x * 1.2,
+                        y: this.el.object3D.scale.y * 1.2,
+                        z: this.el.object3D.scale.z * 1.2
+                    });
+                    
+                    // Анимация пульсации
+                    this.el.setAttribute('animation', {
+                        property: 'scale',
+                        to: `${this.el.object3D.scale.x} ${this.el.object3D.scale.y} ${this.el.object3D.scale.z}`,
+                        dur: 300,
+                        easing: 'easeOutElastic'
+                    });
+                });
+            }
+        });
+        
+        // Компонент тени
+        AFRAME.registerComponent('shadow', {
+            schema: {
+                type: {type: 'string', default: 'basic'}
+            },
+            init: function() {
+                if (this.data.type === 'basic') {
+                    this.el.setAttribute('shadow', 'cast: true; receive: true');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
