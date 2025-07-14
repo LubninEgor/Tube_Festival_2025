@@ -2,7 +2,6 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- Важные мета-теги для iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,6 +18,7 @@
             height: 100vh;
             width: 100vw;
             -webkit-tap-highlight-color: transparent;
+            touch-action: none;
         }
         .info-panel {
             position: absolute;
@@ -93,7 +93,6 @@
             box-shadow: 0 0 20px rgba(255,255,255,0.5);
         }
         
-        /* Кнопка запуска камеры */
         #startButton {
             position: absolute;
             top: 50%;
@@ -113,11 +112,70 @@
         .hidden {
             display: none;
         }
+        
+        /* Панель управления камерой */
+        .camera-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10001;
+        }
+        
+        .camera-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            color: white;
+        }
+        
+        .spinner {
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 5px solid #4dabf7;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <!-- Экран загрузки -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Загрузка ресурсов...</p>
+    </div>
+    
     <!-- Кнопка для запуска камеры -->
-    <button id="startButton">ЗАПУСТИТЬ КАМЕРУ</button>
+    <button id="startButton" class="hidden">ЗАПУСТИТЬ AR</button>
     
     <div class="info-panel hidden" id="infoPanel">
         <h2>Tube Festival 2025</h2>
@@ -131,8 +189,14 @@
     <div class="indicator-label hidden" id="indicatorLabel">Поиск маркера</div>
     
     <div class="marker-image hidden" id="markerImage"></div>
+    
+    <!-- Панель управления камерой -->
+    <div class="camera-controls hidden" id="cameraControls">
+        <div class="camera-btn" id="switchCamera" title="Переключить камеру">↻</div>
+        <div class="camera-btn" id="torchToggle" title="Фонарик">🔦</div>
+    </div>
 
-    <!-- Добавлен атрибут playsinline для iOS -->
+    <!-- AR сцена -->
     <a-scene
         vr-mode-ui="enabled: false"
         renderer="logarithmicDepthBuffer: true; precision: medium;"
@@ -156,41 +220,113 @@
     </a-scene>
 
     <script>
+        // Элементы интерфейса
+        const loading = document.getElementById('loading');
         const startButton = document.getElementById('startButton');
         const infoPanel = document.getElementById('infoPanel');
         const markerIndicator = document.getElementById('markerIndicator');
         const indicatorLabel = document.getElementById('indicatorLabel');
         const markerImage = document.getElementById('markerImage');
+        const cameraControls = document.getElementById('cameraControls');
+        const switchCameraBtn = document.getElementById('switchCamera');
+        const torchToggle = document.getElementById('torchToggle');
         const arScene = document.getElementById('arScene');
         const scene = document.querySelector('a-scene');
         
-        // Обработчик запуска камеры
+        // Состояние приложения
+        let currentCamera = 'environment'; // 'environment' - задняя, 'user' - фронтальная
+        let torchEnabled = false;
+        let stream = null;
+        
+        // Показать кнопку запуска после загрузки ресурсов
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                loading.classList.add('hidden');
+                startButton.classList.remove('hidden');
+            }, 1500);
+        });
+        
+        // Обработчик запуска AR
         startButton.addEventListener('click', function() {
-            // Прячем кнопку
             startButton.classList.add('hidden');
-            
-            // Показываем AR сцену
-            arScene.style.display = 'block';
-            
-            // Показываем остальные элементы интерфейса
+            startAR();
+        });
+        
+        // Переключение камеры
+        switchCameraBtn.addEventListener('click', function() {
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            startAR();
+        });
+        
+        // Включение/выключение фонарика (только для задней камеры)
+        torchToggle.addEventListener('click', function() {
+            if (stream && stream.getVideoTracks().length > 0 && currentCamera === 'environment') {
+                const track = stream.getVideoTracks()[0];
+                if (track.getCapabilities().torch) {
+                    torchEnabled = !torchEnabled;
+                    track.applyConstraints({
+                        advanced: [{torch: torchEnabled}]
+                    }).then(() => {
+                        torchToggle.textContent = torchEnabled ? "💡" : "🔦";
+                    }).catch(err => console.error('Ошибка фонарика:', err));
+                }
+            }
+        });
+        
+        // Запуск AR с указанной камерой
+        function startAR() {
+            // Показать элементы интерфейса
             infoPanel.classList.remove('hidden');
             markerIndicator.classList.remove('hidden');
             indicatorLabel.classList.remove('hidden');
             markerImage.classList.remove('hidden');
+            cameraControls.classList.remove('hidden');
             
-            // Принудительно запускаем камеру на мобильных устройствах
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(function(stream) {
-                        // Камера запущена
-                        console.log("Camera access granted");
-                    })
-                    .catch(function(error) {
-                        console.error("Camera access error:", error);
-                        alert("Не удалось получить доступ к камере. Пожалуйста, проверьте разрешения.");
-                    });
+            // Остановить предыдущий поток
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
             }
-        });
+            
+            // Запросить доступ к камере
+            navigator.mediaDevices.getUserMedia({ 
+                video: {
+                    facingMode: currentCamera,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            }).then(function(mediaStream) {
+                stream = mediaStream;
+                console.log("Доступ к камере получен");
+                
+                // Показать AR сцену
+                arScene.style.display = 'block';
+                
+                // Обновить источник видео в AR.js
+                const arjsSystem = scene.systems["arjs"];
+                if (arjsSystem) {
+                    arjsSystem._arSource.onResize();
+                    arjsSystem._arSource.onResizeElement();
+                    arjsSystem._arSource.copyElementSizeTo(document.querySelector('a-scene').canvas);
+                }
+            }).catch(function(error) {
+                console.error("Ошибка доступа к камере:", error);
+                
+                // Обработка ошибок
+                let errorMessage = "Не удалось получить доступ к камере.";
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = "Доступ к камере запрещен. Разрешите доступ в настройках браузера.";
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = "Камера не найдена. Убедитесь, что устройство имеет камеру.";
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage = "Камера уже используется другим приложением.";
+                }
+                
+                indicatorLabel.textContent = errorMessage;
+                indicatorLabel.style.color = "#ff6b6b";
+                markerIndicator.style.backgroundColor = "#ff6b6b";
+            });
+        }
         
         // Начальное состояние индикатора
         markerIndicator.classList.remove('found');
@@ -209,6 +345,31 @@
             indicatorLabel.textContent = "Поиск маркера";
             indicatorLabel.style.color = "white";
         });
+        
+        // Обработка ошибок модели
+        scene.addEventListener('model-error', function(e) {
+            console.error("Ошибка загрузки модели:", e.detail);
+            indicatorLabel.textContent = "Ошибка загрузки модели";
+            indicatorLabel.style.color = "#ff6b6b";
+        });
+        
+        // Адаптация для Android Chrome
+        if (navigator.userAgent.match(/Android/i)) {
+            // На Android часто возникают проблемы с размерами
+            document.querySelector('a-scene').setAttribute('renderer', 'logarithmicDepthBuffer: true; precision: medium; alpha: true; antialias: true;');
+            
+            // Принудительный ресайз после загрузки
+            window.addEventListener('resize', function() {
+                setTimeout(() => {
+                    const arjsSystem = scene.systems["arjs"];
+                    if (arjsSystem) {
+                        arjsSystem._arSource.onResize();
+                        arjsSystem._arSource.onResizeElement();
+                        arjsSystem._arSource.copyElementSizeTo(document.querySelector('a-scene').canvas);
+                    }
+                }, 1000);
+            });
+        }
     </script>
 </body>
 </html>
