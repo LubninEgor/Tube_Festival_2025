@@ -1,133 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <title>AR Test</title>
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.0/aframe/build/aframe-ar.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tube Festival 2025</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <!-- Обновленная версия AR.js с CDN -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.loaders.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        .loading-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; color: white; display: flex; justify-content: center;
-            align-items: center; flex-direction: column; z-index: 10000;
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
             font-family: Arial, sans-serif;
-        }
-        .arjs-loader {
-            width: 150px; height: 150px; margin-bottom: 20px;
-            border: 5px solid #333; border-top: 5px solid #0f0; border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .status-text {
-            font-size: 18px; margin-bottom: 10px; text-align: center;
-        }
-        .instructions {
-            position: absolute; bottom: 20px; width: 100%; text-align: center;
-            color: #aaa; font-size: 14px; padding: 0 20px; box-sizing: border-box;
+            z-index: 1000;
         }
     </style>
 </head>
-<body>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="arjs-loader"></div>
-        <div class="status-text" id="statusText">Инициализация AR...</div>
-        <div class="instructions">Наведите камеру на маркер Hiro</div>
+<body style='margin : 0px; overflow: hidden;'>
+    <div class="info-panel">
+        <h2>Tube Festival 2025</h2>
+        <p>Наведите камеру на маркер</p>
     </div>
-
-    <a-scene 
+    <a-scene
         vr-mode-ui="enabled: false"
-        embedded 
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; maxDetectionRate: 60;"
-        renderer="logarithmicDepthBuffer: true; precision: medium; antialias: true;"
+        renderer="logarithmicDepthBuffer: true; precision: medium;"
+        embedded
+        arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;"
     >
-        <!-- Маркер Hiro -->
-        <a-marker 
-            type="pattern" 
-            preset="custom"
-            url="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.patt"
+        <!-- Исправленный маркер -->
+        <a-nft 
+            type="nft"
+            url="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/trex-image/trex"
+            smooth="true"
+            smoothCount="10"
+            smoothTolerance=".01"
+            smoothThreshold="5"
         >
-            <!-- Тестовая модель астронавта -->
+            <!-- Исправленная модель с работающим URL -->
             <a-entity 
-                id="mainModel"
-                gltf-model="https://cdn.glitch.com/5e8c1cb4-0e5c-4e2e-ba5f-4b5a0b7f0c8e%2Fastronaut.glb?v=1671027270579"
-                scale="0.2 0.2 0.2"
-                position="0 0.5 0"
-                animation-mixer="clip: *; loop: repeat;"
-                rotation="0 180 0"
-            ></a-entity>
-        </a-marker>
-        
-        <!-- Простое окружение -->
-        <a-entity environment="preset: none"></a-entity>
-        
-        <!-- Источники света -->
-        <a-entity light="type: ambient; color: #888; intensity: 0.8"></a-entity>
-        <a-entity light="type: directional; color: #FFF; intensity: 1.0" position="1 2 1"></a-entity>
-        
-        <!-- Камера -->
+                position="0 0 0" 
+                scale="0.05 0.05 0.05" 
+                gltf-model="url(https://cdn.glitch.global/7e6c1e90-6f0d-4a42-9e5c-0f3a9d8a3b4e/astronaut.glb?v=1647351234567)"
+            >
+            </a-entity>
+        </a-nft>
         <a-entity camera></a-entity>
     </a-scene>
-
-    <script>
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', () => {
-            const scene = document.querySelector('a-scene');
-            const statusText = document.getElementById('statusText');
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            
-            // Обработчики событий
-            scene.addEventListener('loaded', () => {
-                statusText.textContent = "Сцена готова";
-                setTimeout(() => {
-                    loadingOverlay.style.opacity = '0';
-                    setTimeout(() => {
-                        loadingOverlay.style.display = 'none';
-                    }, 500);
-                }, 1500);
-            });
-            
-            scene.addEventListener('arjs-video-loaded', () => {
-                statusText.textContent = "Камера активирована";
-            });
-            
-            scene.addEventListener('error', (e) => {
-                statusText.textContent = `Ошибка: ${e.detail.error}`;
-                console.error('AR Scene Error:', e.detail.error);
-            });
-            
-            // Обработка модели
-            const model = document.getElementById('mainModel');
-            model.addEventListener('model-loaded', () => {
-                statusText.textContent = "3D модель загружена";
-            });
-            
-            model.addEventListener('model-error', (e) => {
-                statusText.textContent = "Ошибка загрузки модели";
-                console.error('Model Error:', e.detail);
-            });
-            
-            // Обработка маркера
-            const marker = document.querySelector('a-marker');
-            marker.addEventListener('markerFound', () => {
-                statusText.textContent = "Маркер распознан!";
-            });
-            
-            marker.addEventListener('markerLost', () => {
-                statusText.textContent = "Наведите на маркер";
-            });
-            
-            // Адаптация для iOS
-            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                scene.setAttribute('arjs', 'sourceWidth: 1280; sourceHeight: 720;');
-            }
-        });
-    </script>
 </body>
 </html>
