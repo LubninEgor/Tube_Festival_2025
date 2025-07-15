@@ -1,178 +1,23 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Event Experience</title>
-    <!-- Исправленные CDN-ссылки с HTTPS -->
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.0/dist/aframe-ar.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            background: #000;
-            height: 100vh;
-            width: 100vw;
-            position: fixed;
-        }
-        
-        .arjs-loader {
-            height: 100%;
-            width: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background-color: rgba(0, 0, 0, 0.95);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            color: white;
-            text-align: center;
-            padding: 20px;
-            transition: opacity 0.5s;
-        }
-        
-        .instructions {
-            background: rgba(0,0,0,0.7);
-            border-radius: 10px;
-            padding: 15px;
-            max-width: 300px;
-            margin-top: 20px;
-        }
-        
-        .marker-image {
-            width: 120px;
-            margin: 15px auto;
-            border: 2px solid white;
-            border-radius: 5px;
-        }
-        
-        .error {
-            color: #ff5555;
-            font-weight: bold;
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-            background: rgba(255, 85, 85, 0.1);
-        }
-        
-        #cameraError {
-            display: none;
-            position: absolute;
-            bottom: 20px;
-            left: 10px;
-            right: 10px;
-            background: rgba(255, 50, 50, 0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 10000;
-            text-align: center;
-        }
-        
-        .hide {
-            display: none !important;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>AR in Web</title>
 </head>
 <body>
-    <div class="arjs-loader">
-        <div id="loaderText">Инициализация AR...</div>
-        <div class="instructions">
-            <p>Наведите камеру на маркер:</p>
-            <!-- Исправленная ссылка на маркер с HTTPS -->
-            <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" class="marker-image" alt="Маркер Hiro">
-            <p>Разрешите доступ к камере при запросе</p>
-        </div>
-        <div id="webglError" class="error hide"></div>
-    </div>
-
-    <div id="cameraError" class="hide">
-        Ошибка доступа к камере. Пожалуйста, разрешите использование камеры и перезагрузите страницу.
-    </div>
-
-    <a-scene
-        vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true; precision: medium;"
-        embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono;"
-    >
-        <a-marker preset="hiro">
-            <a-box
-                position="0 0.5 0"
-                material="color: #00FFAA; metalness: 0.8; roughness: 0.2"
-                scale="0.5 0.5 0.5"
-                animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"
-            ></a-box>
-        </a-marker>
-        <a-entity camera></a-entity>
-    </a-scene>
-
-    <script>
-        function checkWebGLSupport() {
-            try {
-                const canvas = document.createElement('canvas');
-                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                return !!gl;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const loader = document.querySelector('.arjs-loader');
-            const loaderText = document.getElementById('loaderText');
-            const webglError = document.getElementById('webglError');
-            const cameraError = document.getElementById('cameraError');
-            const scene = document.querySelector('a-scene');
-            
-            if (!checkWebGLSupport()) {
-                webglError.classList.remove('hide');
-                webglError.innerHTML = 'Ваш браузер не поддерживает WebGL. Обновите браузер или используйте другое устройство';
-                return;
-            }
-            
-            // Проверка загрузки AR.js
-            if (typeof AFRAME === 'undefined' || typeof THREEx === 'undefined') {
-                webglError.classList.remove('hide');
-                webglError.innerHTML = 'Ошибка загрузки AR библиотек. Проверьте интернет-соединение';
-                return;
-            }
-            
-            scene.addEventListener('arjs-video-loaded', () => {
-                loaderText.innerHTML = 'Наведите камеру на маркер';
-                setTimeout(() => {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.classList.add('hide'), 500);
-                }, 2000);
-            });
-            
-            scene.addEventListener('camera-error', () => {
-                cameraError.classList.remove('hide');
-            });
-            
-            scene.addEventListener('markerFound', () => {
-                if (navigator.vibrate) navigator.vibrate(100);
-            });
-            
-            // Проверка через 5 секунд, если видео не загрузилось
-            setTimeout(() => {
-                if (!scene.hasLoaded) {
-                    loaderText.innerHTML = 'Проблемы с загрузкой. Проверьте доступ к камере';
-                    cameraError.classList.remove('hide');
-                }
-            }, 5000);
-        });
-    </script>
+	<script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+	<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+	<a-scene embedded arjs>
+		<a-marker preset="hiro">
+			<a-entity
+				position="0 0 0"
+				scale="1 1 1"
+				gltf-model="obj/scene.gltf"
+			></a-entity>
+		</a-marker>
+		<a-entity camera></a-entity>
+	</a-scene>
 </body>
 </html>
