@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AR Event Experience</title>
+    <!-- Исправленные CDN-ссылки с HTTPS -->
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.0/dist/aframe-ar.min.js"></script>
     <style>
@@ -89,7 +90,8 @@
         <div id="loaderText">Инициализация AR...</div>
         <div class="instructions">
             <p>Наведите камеру на маркер:</p>
-            <img src="https://arjs-cdn.s3.eu-west-1.amazonaws.com/AR.js/data/images/hiro.png" class="marker-image" alt="Маркер Hiro">
+            <!-- Исправленная ссылка на маркер с HTTPS -->
+            <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" class="marker-image" alt="Маркер Hiro">
             <p>Разрешите доступ к камере при запросе</p>
         </div>
         <div id="webglError" class="error hide"></div>
@@ -117,7 +119,6 @@
     </a-scene>
 
     <script>
-        // Функция проверки поддержки WebGL (исправленная)
         function checkWebGLSupport() {
             try {
                 const canvas = document.createElement('canvas');
@@ -128,7 +129,6 @@
             }
         }
 
-        // Основная инициализация
         document.addEventListener('DOMContentLoaded', () => {
             const loader = document.querySelector('.arjs-loader');
             const loaderText = document.getElementById('loaderText');
@@ -136,14 +136,19 @@
             const cameraError = document.getElementById('cameraError');
             const scene = document.querySelector('a-scene');
             
-            // Проверка поддержки WebGL
             if (!checkWebGLSupport()) {
                 webglError.classList.remove('hide');
                 webglError.innerHTML = 'Ваш браузер не поддерживает WebGL. Обновите браузер или используйте другое устройство';
                 return;
             }
             
-            // Событие готовности видео
+            // Проверка загрузки AR.js
+            if (typeof AFRAME === 'undefined' || typeof THREEx === 'undefined') {
+                webglError.classList.remove('hide');
+                webglError.innerHTML = 'Ошибка загрузки AR библиотек. Проверьте интернет-соединение';
+                return;
+            }
+            
             scene.addEventListener('arjs-video-loaded', () => {
                 loaderText.innerHTML = 'Наведите камеру на маркер';
                 setTimeout(() => {
@@ -152,19 +157,17 @@
                 }, 2000);
             });
             
-            // Обработка ошибок камеры
             scene.addEventListener('camera-error', () => {
                 cameraError.classList.remove('hide');
             });
             
-            // При обнаружении маркера
             scene.addEventListener('markerFound', () => {
                 if (navigator.vibrate) navigator.vibrate(100);
             });
             
-            // Проверка загрузки
+            // Проверка через 5 секунд, если видео не загрузилось
             setTimeout(() => {
-                if (!scene.hasAttribute('arjs-video-loaded')) {
+                if (!scene.hasLoaded) {
                     loaderText.innerHTML = 'Проблемы с загрузкой. Проверьте доступ к камере';
                     cameraError.classList.remove('hide');
                 }
