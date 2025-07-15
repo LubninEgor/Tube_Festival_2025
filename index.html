@@ -4,45 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AR Event Experience</title>
-    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1.4.2/dist/aframe-master.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.min.js"></script>
+    <!-- Обновленные CDN-ссылки -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.0/dist/aframe-ar.min.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
+            font-family: Arial, sans-serif;
         }
         .arjs-loader {
             height: 100%;
             width: 100%;
             position: absolute;
             top: 0;
-            background-color: rgba(0, 0, 0, 0.8);
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.85);
             z-index: 9999;
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             color: white;
-            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .arjs-loader div {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .instructions {
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            padding: 15px;
+            max-width: 300px;
+        }
+        .marker-image {
+            width: 120px;
+            margin: 15px auto;
+            border: 2px solid white;
+            border-radius: 5px;
         }
     </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
-    <!-- Индикатор загрузки -->
+<body>
     <div class="arjs-loader">
-        <div>Загрузка AR... Наведите камеру на маркер</div>
+        <div>Инициализация AR...</div>
+        <div class="instructions">
+            <p>После загрузки наведите камеру на маркер:</p>
+            <img src="https://arjs-cdn.s3.eu-west-1.amazonaws.com/AR.js/data/images/hiro.png" class="marker-image" alt="Маркер Hiro">
+            <p>Разрешите доступ к камере при запросе</p>
+        </div>
     </div>
 
-    <!-- AR сцена -->
     <a-scene
         vr-mode-ui="enabled: false"
         renderer="logarithmicDepthBuffer: true; precision: medium;"
         embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono;"
     >
-        <!-- Маркер Hiro (стандартный) -->
-        <a-marker type="pattern" preset="hiro">
-            <!-- 3D куб с оптимизированными параметрами -->
+        <!-- Маркер Hiro -->
+        <a-marker preset="hiro">
             <a-box
                 position="0 0.5 0"
                 material="color: #00FFAA; metalness: 0.8; roughness: 0.2"
@@ -54,17 +78,34 @@
     </a-scene>
 
     <script>
-        // Скрываем лоадер после загрузки сцены
+        // Скрываем лоадер после загрузки
         document.querySelector('a-scene').addEventListener('loaded', function() {
             setTimeout(() => {
                 document.querySelector('.arjs-loader').style.display = 'none';
             }, 1500);
         });
 
-        // Обработка ошибок камеры
-        document.querySelector('a-scene').addEventListener('camera-error', function() {
-            alert('Ошибка доступа к камере. Пожалуйста, разрешите использование камеры и перезагрузите страницу.');
+        // Обработка ошибок
+        const scene = document.querySelector('a-scene');
+        scene.addEventListener('arjs-video-loaded', () => {
+            console.log("Видео поток инициализирован");
         });
+        
+        scene.addEventListener('markerFound', () => {
+            console.log("Маркер найден!");
+            // Вибрация при обнаружении (поддерживается не всеми браузерами)
+            if(navigator.vibrate) navigator.vibrate(100);
+        });
+
+        window.addEventListener('arjs-nft-loaded', () => {
+            console.log("AR.js загружен");
+        });
+
+        // Проверка поддержки WebGL
+        if (!AFRAME.utils.isWebGLEnabled()) {
+            document.querySelector('.arjs-loader').innerHTML = 
+                '<div style="color: #ff5555">Ваш браузер не поддерживает WebGL. Обновите браузер или используйте другое устройство</div>';
+        }
     </script>
 </body>
 </html>
