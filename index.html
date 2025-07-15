@@ -6,26 +6,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Tube Festival 2025</title>
-    
-    <!-- Проверенные CDN с резервными источниками -->
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
-    <script>
-        // Резервная загрузка A-Frame
-        if (typeof AFRAME === 'undefined') {
-            document.write('<script src="https://aframe.io/releases/1.2.0/aframe.min.js"><\/script>');
-        }
-    </script>
-    
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script>
-        // Резерв для AR.js
-        if (typeof THREEx === 'undefined') {
-            document.write('<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@master/aframe/build/aframe-ar.js"><\/script>');
-        }
-    </script>
-    
     <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.loaders.min.js"></script>
-    
     <style>
         body {
             margin: 0;
@@ -37,57 +20,6 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: none;
         }
-        
-        .loading {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10002;
-            color: white;
-        }
-        
-        .spinner {
-            border: 5px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 5px solid #4dabf7;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        #startButton {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 30px;
-            font-size: 18px;
-            background: linear-gradient(45deg, #ff6b6b, #4dabf7);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            z-index: 10001;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
         .info-panel {
             position: absolute;
             top: 10px;
@@ -100,7 +32,16 @@
             max-width: 300px;
             backdrop-filter: blur(5px);
         }
+        h2 {
+            margin-top: 0;
+            color: #ff6b6b;
+        }
+        .instructions {
+            margin-top: 10px;
+            font-size: 14px;
+        }
         
+        /* Индикатор обнаружения маркера */
         .marker-indicator {
             position: absolute;
             top: 20px;
@@ -152,6 +93,27 @@
             box-shadow: 0 0 20px rgba(255,255,255,0.5);
         }
         
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #ff6b6b, #4dabf7);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 10001;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Панель управления камерой */
         .camera-controls {
             position: absolute;
             bottom: 20px;
@@ -173,13 +135,43 @@
             cursor: pointer;
             margin-bottom: 10px;
         }
+        
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            color: white;
+        }
+        
+        .spinner {
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 5px solid #4dabf7;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <!-- Экран загрузки -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
-        <p id="loadingText">Загрузка ресурсов...</p>
+        <p>Загрузка ресурсов...</p>
     </div>
     
     <!-- Кнопка для запуска камеры -->
@@ -198,6 +190,7 @@
     
     <div class="marker-image hidden" id="markerImage"></div>
     
+    <!-- Панель управления камерой -->
     <div class="camera-controls hidden" id="cameraControls">
         <div class="camera-btn" id="switchCamera" title="Переключить камеру">↻</div>
         <div class="camera-btn" id="torchToggle" title="Фонарик">🔦</div>
@@ -206,7 +199,7 @@
     <!-- AR сцена -->
     <a-scene
         vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true; precision: medium; alpha: true;"
+        renderer="logarithmicDepthBuffer: true; precision: medium;"
         embedded
         arjs="sourceType: webcam; debugUIEnabled: false;"
         id="arScene"
@@ -215,24 +208,12 @@
         webxr
     >
         <a-marker type="pattern" preset="hiro">
-            <!-- Простая примитивная модель как резерв -->
-            <a-entity id="modelContainer">
-                <a-box 
-                    id="fallbackModel"
-                    position="0 0.5 0" 
-                    scale="0.5 0.5 0.5" 
-                    color="#4CC3D9"
-                    animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"
-                    class="hidden"
-                ></a-box>
-                
-                <a-entity 
-                    id="mainModel"
-                    position="0 0.5 0" 
-                    scale="0.05 0.05 0.05" 
-                    gltf-model=""
-                    animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"
-                ></a-entity>
+            <a-entity 
+                position="0 0.5 0" 
+                scale="0.05 0.05 0.05" 
+                gltf-model="url(https://cdn.jsdelivr.net/gh/LubninEgor/Tube_Festival_2025@main/models/astronaut.glb)"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"
+            >
             </a-entity>
         </a-marker>
         <a-entity camera></a-entity>
@@ -241,7 +222,6 @@
     <script>
         // Элементы интерфейса
         const loading = document.getElementById('loading');
-        const loadingText = document.getElementById('loadingText');
         const startButton = document.getElementById('startButton');
         const infoPanel = document.getElementById('infoPanel');
         const markerIndicator = document.getElementById('markerIndicator');
@@ -252,109 +232,18 @@
         const torchToggle = document.getElementById('torchToggle');
         const arScene = document.getElementById('arScene');
         const scene = document.querySelector('a-scene');
-        const mainModel = document.getElementById('mainModel');
-        const fallbackModel = document.getElementById('fallbackModel');
         
         // Состояние приложения
-        let currentCamera = 'environment';
+        let currentCamera = 'environment'; // 'environment' - задняя, 'user' - фронтальная
         let torchEnabled = false;
         let stream = null;
-        let resourcesLoaded = false;
         
-        // URL модели с резервными источниками
-        const MODEL_URLS = [
-            // Основной источник
-            'https://cdn.jsdelivr.net/gh/LubninEgor/Tube_Festival_2025@main/models/astronaut.glb',
-            
-            // Резервные источники
-            'https://raw.githubusercontent.com/LubninEgor/Tube_Festival_2025/main/models/astronaut.glb',
-            'https://cdn.glitch.global/7e6c1e90-6f0d-4a42-9e5c-0f3a9d8a3b4e/astronaut.glb?v=1647351234567',
-            
-            // Простая тестовая модель
-            'https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@master/assets/models/low-poly/crate.glb'
-        ];
-        
-        // Проверка загрузки ресурсов
-        function checkResourcesLoaded() {
-            // Проверяем загрузку основных библиотек
-            if (typeof AFRAME !== 'undefined' && 
-                typeof THREEx !== 'undefined' && 
-                resourcesLoaded) {
-                
-                loadingText.textContent = "Ресурсы загружены!";
-                setTimeout(() => {
-                    loading.classList.add('hidden');
-                    startButton.classList.remove('hidden');
-                }, 1000);
-            } else {
-                setTimeout(checkResourcesLoaded, 500);
-            }
-        }
-        
-        // Загрузка модели
-        function loadModel() {
-            let currentIndex = 0;
-            
-            function tryLoad() {
-                if (currentIndex >= MODEL_URLS.length) {
-                    // Все источники не сработали - используем резервную модель
-                    loadingText.textContent = "Ошибка загрузки модели. Используем резервный вариант.";
-                    mainModel.classList.add('hidden');
-                    fallbackModel.classList.remove('hidden');
-                    resourcesLoaded = true;
-                    return;
-                }
-                
-                const url = MODEL_URLS[currentIndex];
-                loadingText.textContent = `Загрузка модели... [${currentIndex + 1}/${MODEL_URLS.length}]`;
-                
-                // Проверяем доступность модели
-                fetch(url, { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            // Устанавливаем модель
-                            mainModel.setAttribute('gltf-model', `url(${url})`);
-                            resourcesLoaded = true;
-                            
-                            // Обработчик успешной загрузки
-                            mainModel.addEventListener('model-loaded', () => {
-                                loadingText.textContent = "Модель успешно загружена!";
-                            });
-                        } else {
-                            throw new Error("Model not found");
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`Ошибка загрузки модели (${url}):`, error);
-                        currentIndex++;
-                        setTimeout(tryLoad, 500);
-                    });
-            }
-            
-            tryLoad();
-        }
-        
-        // Начальная загрузка
-        window.addEventListener('DOMContentLoaded', () => {
-            // Проверяем поддержку
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                loadingText.innerHTML = "Ваш браузер не поддерживает AR.<br>Попробуйте Chrome или Firefox на Android.";
-                return;
-            }
-            
-            // Загружаем модель
-            loadModel();
-            
-            // Проверяем загрузку ресурсов
-            checkResourcesLoaded();
-            
-            // Таймаут на случай проблем
+        // Показать кнопку запуска после загрузки ресурсов
+        window.addEventListener('load', function() {
             setTimeout(() => {
-                if (!resourcesLoaded) {
-                    loadingText.innerHTML = "Проблемы с загрузкой ресурсов.<br>Попробуйте перезагрузить страницу.";
-                    startButton.classList.remove('hidden');
-                }
-            }, 10000);
+                loading.classList.add('hidden');
+                startButton.classList.remove('hidden');
+            }, 1500);
         });
         
         // Обработчик запуска AR
@@ -369,7 +258,7 @@
             startAR();
         });
         
-        // Включение/выключение фонарика
+        // Включение/выключение фонарика (только для задней камеры)
         torchToggle.addEventListener('click', function() {
             if (stream && stream.getVideoTracks().length > 0 && currentCamera === 'environment') {
                 const track = stream.getVideoTracks()[0];
@@ -407,18 +296,18 @@
                 }
             }).then(function(mediaStream) {
                 stream = mediaStream;
+                console.log("Доступ к камере получен");
                 
                 // Показать AR сцену
                 arScene.style.display = 'block';
                 
                 // Обновить источник видео в AR.js
-                setTimeout(() => {
-                    const arjsSystem = scene.systems["arjs"];
-                    if (arjsSystem) {
-                        arjsSystem._arSource._copyElementSizeTo(scene.canvas);
-                        arjsSystem._arSource.onResize();
-                    }
-                }, 500);
+                const arjsSystem = scene.systems["arjs"];
+                if (arjsSystem) {
+                    arjsSystem._arSource.onResize();
+                    arjsSystem._arSource.onResizeElement();
+                    arjsSystem._arSource.copyElementSizeTo(document.querySelector('a-scene').canvas);
+                }
             }).catch(function(error) {
                 console.error("Ошибка доступа к камере:", error);
                 
@@ -458,16 +347,29 @@
         });
         
         // Обработка ошибок модели
-        mainModel.addEventListener('model-error', function(e) {
+        scene.addEventListener('model-error', function(e) {
             console.error("Ошибка загрузки модели:", e.detail);
-            
-            // Переключаемся на резервную модель
-            mainModel.classList.add('hidden');
-            fallbackModel.classList.remove('hidden');
-            
-            indicatorLabel.textContent = "Используем резервную модель";
-            indicatorLabel.style.color = "#ff9800";
+            indicatorLabel.textContent = "Ошибка загрузки модели";
+            indicatorLabel.style.color = "#ff6b6b";
         });
+        
+        // Адаптация для Android Chrome
+        if (navigator.userAgent.match(/Android/i)) {
+            // На Android часто возникают проблемы с размерами
+            document.querySelector('a-scene').setAttribute('renderer', 'logarithmicDepthBuffer: true; precision: medium; alpha: true; antialias: true;');
+            
+            // Принудительный ресайз после загрузки
+            window.addEventListener('resize', function() {
+                setTimeout(() => {
+                    const arjsSystem = scene.systems["arjs"];
+                    if (arjsSystem) {
+                        arjsSystem._arSource.onResize();
+                        arjsSystem._arSource.onResizeElement();
+                        arjsSystem._arSource.copyElementSizeTo(document.querySelector('a-scene').canvas);
+                    }
+                }, 1000);
+            });
+        }
     </script>
 </body>
 </html>
