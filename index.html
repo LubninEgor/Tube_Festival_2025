@@ -1,64 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AR Photo App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Фавиконка -->
+    <link rel="icon" href="ico.png" type="image/png">
+    <title>Скачать приложение</title>
     <style>
-        body { margin: 0; overflow: hidden; }
-        #capture-btn {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f2dcc4 0%, #f2dcc4 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            text-align: center;
+        }
+        /* Стили для круглой иконки без обводки */
+        .app-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            border-radius: 50%; /* Круглая форма */
+            overflow: hidden; /* Обрезаем углы */
+        }
+        .app-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Заполнение пространства */
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .version {
+            color: #666;
+            margin-bottom: 30px;
             font-size: 16px;
+        }
+        /* Упрощённые стили кнопки */
+        .btn-download {
+            display: inline-block;
+            background: #f2dcc4; /* Требуемый цвет */
+            color: #5c3a2a; /* Тёмный текст для контраста */
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
             cursor: pointer;
         }
-        #canvas { display: none; }
+        .btn-download:hover {
+            background: #e5d0b8; /* Немного темнее при наведении */
+            transform: translateY(-3px);
+        }
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: left;
+            margin-top: 20px;
+        }
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 10px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .footer {
+            margin-top: 30px;
+            color: #777;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <!-- AR.js и Three.js -->
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-
-    <!-- Сцена A-Frame -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-        <!-- Маркер Hiro -->
-        <a-marker preset="hiro">
-            <!-- Добавляем 3D-объект (куб) -->
-            <a-box position="0 0.5 0" material="color: red;" scale="0.5 0.5 0.5"></a-box>
-        </a-marker>
-        <!-- Камера -->
-        <a-entity camera></a-entity>
-    </a-scene>
-
-    <!-- Кнопка для съемки -->
-    <button id="capture-btn">Сфотографировать</button>
-    <canvas id="canvas"></canvas>
-
-    <script>
-        // Захват изображения
-        const captureBtn = document.getElementById('capture-btn');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        const video = document.querySelector('a-scene').components['arjs']._video;
-
-        captureBtn.addEventListener('click', () => {
-            // Устанавливаем размер canvas равным размеру видео
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            // Рисуем текущий кадр видео на canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Создаем ссылку для скачивания
-            const link = document.createElement('a');
-            link.download = 'ar-photo.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        });
-    </script>
+    <div class="container">
+        <div class="app-icon">
+            <img src="ico.png" alt="Иконка приложения">
+        </div>
+        <h1>Фестиваль трубочек</h1>
+        <p class="version">Версия 4.0.5</p>
+        
+		<a href="https://lubninegor.github.io/Fest_Site/" id="downloadBtn" class="btn-download">
+            Посмотреть в AR
+        </a>
+        
+        <p class="footer">команда "Человеки". Все права защищены</p>
+    </div>
 </body>
 </html>
